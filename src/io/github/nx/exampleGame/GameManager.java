@@ -41,7 +41,7 @@ public class GameManager extends AbstractGame {
 		gc.setHeight(480);
 		gc.setScale(1.5f);
 		gc.setIcoPath("/icons/game.png");
-		gc.setTitle("LunaX | Example Game");
+		//gc.setTitle("LunaX | Example Game");
 		gc.start();
 	}
 }
