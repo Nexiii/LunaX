@@ -17,7 +17,7 @@ public class GameContainer implements Runnable {
 	private float defaultScl = 4f;
 	private int width = defaultW, height = defaultH;
 	private float scale = defaultScl;
-	private String title = "LunaX | v.1.1A";
+	private String title = "LunaX | v.0.7A";
 	private String IcoImagePath;
 
 	// CONSTRUCTOR
