@@ -4,6 +4,6 @@ Based on [Majoolwip's](https://www.youtube.com/watch?v=4iPEjFUZNsw&list=PL7dwpoQ
 
 # Changelog
 
--> v0.8A\
+-> v0.8A
    > Added a simple Save & Load System\
    > Rewritten the Example Game
