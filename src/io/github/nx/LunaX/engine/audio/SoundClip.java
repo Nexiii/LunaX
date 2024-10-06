@@ -3,7 +3,6 @@ package io.github.nx.LunaX.engine.audio;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
@@ -66,7 +65,15 @@ public class SoundClip {
 	}
 
 	public void setVolume(float value) {
-		gainControl.setValue(value);
+		float max = 6.0206f;
+		float min = -40f;
+		float percentence;
+		if (value == 0f) {
+			percentence = -80f;
+		} else {
+			percentence = min + ((value) * (max - min));
+		}
+		gainControl.setValue(percentence);
 	}
 
 	public boolean isRunning() {

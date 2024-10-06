@@ -1,7 +1,5 @@
 package io.github.nx.LunaX.engine;
 
-import io.github.nx.LunaX.engine.gfx.Color;
-
 public class GameContainer implements Runnable {
 
 	private Thread thread;
@@ -13,11 +11,13 @@ public class GameContainer implements Runnable {
 	private boolean running = false;
 	private final double UPDATE_CAP = 1.0 / 60.0;
 
-	private int defaultW = 320, defaultH = 240;
-	private float defaultScl = 4f;
+	int fps;
+	
+	private int defaultW = 640, defaultH = 480;
+	private float defaultScl = 1.5f;
 	private int width = defaultW, height = defaultH;
 	private float scale = defaultScl;
-	private String title = "LunaX | v.1.1A";
+	private String title = "LunaX | v.0.8A";
 	private String IcoImagePath;
 
 	// CONSTRUCTOR
@@ -52,7 +52,7 @@ public class GameContainer implements Runnable {
 
 		double frameTime = 0;
 		int frames = 0;
-		int fps = 0;
+		fps = 0;
 
 		game.init(this);
 
@@ -87,8 +87,6 @@ public class GameContainer implements Runnable {
 				renderer.process();
 				renderer.setCamX(0);
 				renderer.setCamY(0);
-				renderer.drawString("FPS:" + fps, 0, 0, Color.RGB(255, 255, 255));
-				renderer.drawString("MouseX: "+ input.getMouseX()+" MouseY: "+input.getMouseY(), 0, 13, Color.RGB(255, 255, 255));
 				window.update();
 				frames++;
 			} else {
@@ -157,5 +155,9 @@ public class GameContainer implements Runnable {
 
 	public void setIcoPath(String icoImagePath) {
 		IcoImagePath = icoImagePath;
+	}
+
+	public int getFps() {
+		return fps;
 	}
 }
