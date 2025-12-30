@@ -13,7 +13,7 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 
 public class SoundClip {
 	private Clip clip = null;
-	private FloatControl gainControl; // controls how loud sound is
+	private FloatControl gainControl;
 
 	public SoundClip(String path) {
 		try {

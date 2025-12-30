@@ -2,37 +2,52 @@ package io.github.nx.LunaX.engine.gfx;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-
 import javax.imageio.ImageIO;
 
 public class Image {
 	private int w, h;
-	private int[] p;				//pixel data
+	private int[] p; // pixel data
 	private boolean alpha = true;
 	private int lightBlock = Light.NONE;
-	
-	public Image (String path) {
+
+	public Image(String path) {
 		BufferedImage image = null;
-		
+
 		try {
-			image = ImageIO.read(Image.class.getResourceAsStream(path));
+			var resource = Image.class.getResourceAsStream(path);
+			if (resource == null) {
+				throw new IOException("Bild nicht gefunden: " + path);
+			}
+			image = ImageIO.read(resource);
 		} catch (IOException e) {
 			e.printStackTrace();
+			this.w = 0;
+			this.h = 0;
+			this.p = new int[0];
+			return; 
 		}
-		
-		w = image.getWidth();
-		h = image.getHeight();
-		p = image.getRGB(0, 0, w, h, null, 0, w);
-		
+		this.w = image.getWidth();
+		this.h = image.getHeight();
+		this.p = image.getRGB(0, 0, w, h, null, 0, w);
+
 		image.flush();
 	}
-	
 	public Image(int[] p, int w, int h) {
 		this.p = p;
 		this.w = w;
 		this.h = h;
 	}
-
+	public Image(BufferedImage image) {
+		this.w = image.getWidth();
+		this.h = image.getHeight();
+		this.p = image.getRGB(0, 0, w, h, null, 0, w);
+	}
+	public BufferedImage getBufferedImage() {
+		BufferedImage bi = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+		bi.setRGB(0, 0, w, h, p, 0, w);
+		return bi;
+	}
+	
 	public int getWidth() {
 		return w;
 	}
@@ -72,7 +87,4 @@ public class Image {
 	public void setLightBlock(int lightBlock) {
 		this.lightBlock = lightBlock;
 	}
-	
-	
-	
 }

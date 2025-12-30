@@ -8,24 +8,25 @@ import io.github.nx.LunaX.engine.Input;
 import io.github.nx.LunaX.engine.Renderer;
 import io.github.nx.LunaX.engine.audio.SoundClip;
 import io.github.nx.LunaX.engine.gfx.Color;
+import io.github.nx.LunaX.engine.gfx.Font;
 import io.github.nx.LunaX.engine.gfx.Image;
-import io.github.nx.LunaX.engine.serialization.SaveManager;
+import io.github.nx.LunaX.engine.serialization.Storage;
 import io.github.nx.exampleGame.Entities.Player;
 
 public class GameManager extends AbstractGame {
 
 	public Player player;
-	public SaveManager saveMan;
-	SoundClip clip = new SoundClip("/sounds/jump.wav");
+	public Level lvl1;
+	SoundClip clip;
 
-	public GameManager() {
-		
-	}
+	public GameManager() { }
 
 	@Override
 	public void init(GameContainer gc) {
+		lvl1 = new Level("/levels/level1.png");
 		player = new Player(gc);
-		saveMan = new SaveManager(gc);
+		clip = new SoundClip("/sounds/jump.wav");
+		clip.setVolume(0.5f);
 	}
 
 	@Override
@@ -37,6 +38,7 @@ public class GameManager extends AbstractGame {
 	public void render(GameContainer gc, Renderer r) {
 		r.clear();
 		
+		lvl1.render(gc, r, player.getCamera());
 		player.render(gc, r);
 		Input input = gc.getInput();
 		
@@ -47,31 +49,31 @@ public class GameManager extends AbstractGame {
 		String formMS = df.format(ms);
 		
 		
-		r.drawString("FPS: " + gc.getFps() + " | " + formMS+"ms" , 0, 0, Color.RGB(191, 0, 255));
+		r.drawString("FPS: " + gc.getFps() + " | " + formMS+"ms" , 0, 0, Color.RGB(191, 0, 255), Font.ARIAL);
 		
-		r.drawString("MouseX: "+ input.getMouseX()+" MouseY: "+input.getMouseY() + " | X:" + player.getX() + " Y: " +player.getY(), 0, 13, Color.RGB(191, 0, 255));
+		r.drawString("MouseX: "+ input.getMouseX() + " MouseY: "+ input.getMouseY() + " | X:" + player.getX() + " Y: " + player.getY(), 0, 13, Color.RGB(191, 0, 255), Font.ARIAL);
 		
-		r.drawString("WASD to Move | Shift to Sprint | Mouse1 for a sound | - to take Damage", 0, 26, Color.RGB(191, 0, 255));
-		
+		r.drawString("WASD to Move | Shift to Sprint | Mouse1 for a sound | - to take Damage", 0, 26, Color.RGB(191, 0, 255), Font.ARIAL);
 		
 		Image img = new Image("/sprites/point.png");
-		r.drawImage(img, gc.getInput().getMouseX() - (img.getWidth() / 2), gc.getInput().getMouseY() - (img.getHeight() / 2));
-		
+		r.drawImage(img, gc.getInput().getMouseX() - (img.getWidth() / 2), gc.getInput().getMouseY() - (img.getHeight() / 2), false);
 		if (gc.getInput().isButton(1)) {
-			clip.setVolume(0.5f);
-			if (!clip.isRunning()) { //fixing that sounds isn't playing 1000 times a second
+			if (!clip.isRunning()) {
 				clip.play();
 			}
 		}
 	}
 
 	public static void main(String[] args) {
+		Storage.init("save.bin");
+		
 		GameContainer gc = new GameContainer(new GameManager());
 		gc.setWidth(640);
-		gc.setHeight(480);
-		gc.setScale(1.5f);
-		gc.setIcoPath("/icons/game.png");
+		gc.setHeight(360);
+		gc.setScale(2f);
+		gc.setIcoPath("/icons/LunaX.png");
 		gc.setTitle("LunaX | Example Game");
+		
 		gc.start();
 	}
 }

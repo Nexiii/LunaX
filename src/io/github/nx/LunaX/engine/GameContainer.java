@@ -17,15 +17,13 @@ public class GameContainer implements Runnable {
 	private float defaultScl = 1.5f;
 	private int width = defaultW, height = defaultH;
 	private float scale = defaultScl;
-	private String title = "LunaX | v.0.8A";
+	private String title = "LunaX | v.0.8.3A";
 	private String IcoImagePath;
 
-	// CONSTRUCTOR
 	public GameContainer(AbstractGame game) {
 		this.game = game;
 	}
 
-	// START
 	public void start() {
 		window = new Window(this);
 		renderer = new Renderer(this);
@@ -35,12 +33,10 @@ public class GameContainer implements Runnable {
 		thread.run();
 	}
 
-	// STOP
 	public void stop() {
 
 	}
 
-	// RUN
 	public void run() {
 		running = true;
 
@@ -66,7 +62,6 @@ public class GameContainer implements Runnable {
 			unprocessedTime += passedTime;
 			frameTime += passedTime;
 
-			// Handles game updates
 			while (unprocessedTime >= UPDATE_CAP) {
 				unprocessedTime -= UPDATE_CAP;
 				render = true;
@@ -100,7 +95,6 @@ public class GameContainer implements Runnable {
 		dispose();
 	}
 
-	// DISPOSE
 	private void dispose() {
 
 	}

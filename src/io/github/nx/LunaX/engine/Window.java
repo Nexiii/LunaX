@@ -24,16 +24,14 @@ public class Window {
 		canvas = new Canvas();
 		Dimension s = new Dimension((int) (gc.getWidth() * gc.getScale()), (int) (gc.getHeight() * gc.getScale()));
 		canvas.setPreferredSize(s);
-		canvas.setMaximumSize(s); // locks canvas to 1 size
+		canvas.setMaximumSize(s);
 		canvas.setMinimumSize(s);
 
 		frame = new JFrame(gc.getTitle());
 		frame.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource(gc.getIcoPath())));
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // makes sure program closes - DO NOT FORGET THIS LINE
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setLayout(new BorderLayout());
 		
-		// Creating a blank Cursor\\
-		// You can delete this \\
 		BufferedImage cursorImg = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
 		Cursor blankCursor = Toolkit.getDefaultToolkit().createCustomCursor(
 		cursorImg, new Point(0, 0), "BLANK");
@@ -42,7 +40,7 @@ public class Window {
 		frame.add(canvas, BorderLayout.CENTER);
 		frame.pack(); // sets frame to canvas size
 		frame.setLocationRelativeTo(null);
-		frame.setResizable(false); // allows frame to be resized (disabled)
+		frame.setResizable(false);
 		frame.setVisible(true);
 
 		canvas.createBufferStrategy(2);
@@ -55,7 +53,6 @@ public class Window {
 		bs.show();
 	}
 
-	// ----- GETTERS & SETTERS -----
 	public BufferedImage getImage() {
 		return image;
 	}

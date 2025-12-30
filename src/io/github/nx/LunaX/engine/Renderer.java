@@ -14,7 +14,6 @@ import io.github.nx.LunaX.engine.gfx.Light;
 import io.github.nx.LunaX.engine.gfx.LightRequest;
 
 public class Renderer {
-	private Font font = Font.COMIC_SANS;
 
 	private ArrayList<ImageRequest> imageRequest = new ArrayList<ImageRequest>();
 	private ArrayList<LightRequest> lightRequest = new ArrayList<LightRequest>();
@@ -50,52 +49,49 @@ public class Renderer {
 	}
 
 	public void process() {
-		processing = true;
+	    processing = true;
 
-		// sorting
-		Collections.sort(imageRequest, new Comparator<ImageRequest>() {
-			@Override
-			public int compare(ImageRequest i0, ImageRequest i1) {
-				if (i0.zDepth < i1.zDepth)
-					return -1;
-				if (i0.zDepth > i1.zDepth)
-					return 1;
-				return 0;
-			}
-		});
+	    // sorting
+	    Collections.sort(imageRequest, new Comparator<ImageRequest>() {
+	        @Override
+	        public int compare(ImageRequest i0, ImageRequest i1) {
+	            if (i0.zDepth < i1.zDepth) return -1;
+	            if (i0.zDepth > i1.zDepth) return 1;
+	            return 0;
+	        }
+	    });
 
-		for (int i = 0; i < imageRequest.size(); i++) {
-			ImageRequest ir = imageRequest.get(i);
-			setzDepth(ir.zDepth);
-			drawImage(ir.image, ir.offX, ir.offY);
-		}
+	    for (int i = 0; i < imageRequest.size(); i++) {
+	        ImageRequest ir = imageRequest.get(i);
+	        setzDepth(ir.zDepth);
+	        
+	        drawImage(ir.image, ir.offX, ir.offY, ir.flipX); 
+	    }
 
-		// draw lighting
-		for (int i = 0; i < lightRequest.size(); i++) {
-			LightRequest lr = lightRequest.get(i);
-			drawLightRequest(lr.light, lr.locX, lr.locY);
-		}
+	    // draw lighting
+	    for (int i = 0; i < lightRequest.size(); i++) {
+	        LightRequest lr = lightRequest.get(i);
+	        drawLightRequest(lr.light, lr.locX, lr.locY);
+	    }
 
-		// merge arrays for light
-		for (int i = 0; i < p.length; i++) {
-			float red = ((lightMap[i] >> 16) & 0xff) / 255f;
-			float green = ((lightMap[i] >> 8) & 0xff) / 255f;
-			float blue = (lightMap[i] & 0xff) / 255f;
+	    for (int i = 0; i < p.length; i++) {
+	        float red = ((lightMap[i] >> 16) & 0xff) / 255f;
+	        float green = ((lightMap[i] >> 8) & 0xff) / 255f;
+	        float blue = (lightMap[i] & 0xff) / 255f;
 
-			p[i] = ((int) (((p[i] >> 16) & 0xff) * red) << 16 | (int) (((p[i] >> 8) & 0xff) * green) << 8
-					| (int) ((p[i] & 0xff) * blue));
-		}
+	        p[i] = ((int) (((p[i] >> 16) & 0xff) * red) << 16 | 
+	                (int) (((p[i] >> 8) & 0xff) * green) << 8 | 
+	                (int) ((p[i] & 0xff) * blue));
+	    }
 
-		imageRequest.clear();
-		lightRequest.clear();
-		processing = false;
+	    imageRequest.clear();
+	    lightRequest.clear();
+	    processing = false;
 	}
 
 	public void setPixel(int x, int y, int value) {
 		int alpha = ((value >> 24) & 0xff); // alpha values go up to 255
 
-		// tells not to draw if out of bounds or that one ugly pink color that makes
-		// thing transparent lol
 		if ((x < 0 || x >= pW || y < 0 || y >= pH) || alpha == 0 || value == Color.RGB(255, 0, 255))
 			return;
 
@@ -144,77 +140,70 @@ public class Renderer {
 		lightBlock[x + y * pW] = value;
 	}
 
-	public void drawString(String text, int offX, int offY, int color) {
+	public void drawString(String text, int offX, int offY, int color, Font font) {
 		int offset = 0;
+		Image fontImage = font.getFontImage();
+		
+		int[] fontPixels = fontImage.getPixels();
+		int fontW = fontImage.getWidth();
 
 		for (int i = 0; i < text.length(); i++) {
-			int unicode = text.codePointAt(i); // -32 will make space = 0
+			int unicode = text.codePointAt(i);
+			
+			if(unicode < 0 || unicode >= font.getWidths().length) continue;
 
-			for (int y = 0; y < font.getFontImage().getHeight(); y++) {
-				for (int x = 0; x < font.getWidths()[unicode]; x++) {
-					if (font.getFontImage().getPixels()[(x + font.getOffsets()[unicode])
-							+ y * font.getFontImage().getWidth()] == 0xffffffff) {
+			int charWidth = font.getWidths()[unicode];
+			int charOffset = font.getOffsets()[unicode];
+
+			for (int y = 0; y < fontImage.getHeight(); y++) {
+				for (int x = 0; x < charWidth; x++) {
+					
+					int fontPixel = fontPixels[(x + charOffset) + y * fontW];
+					
+					if ((fontPixel & 0xff000000) != 0) {
 						setPixel(x + offX + offset, y + offY, color);
 					}
 				}
 			}
-			offset += font.getWidths()[unicode];
+			offset += charWidth;
 		}
 	}
 
-	public void drawImage(Image image, int offX, int offY) {
+	public void drawImage(Image img, int offX, int offY, boolean flipX) {
+	    if (offX < -img.getWidth() || offY < -img.getHeight() || offX >= pW || offY >= pH) {
+	        return;
+	    }
+
+	    int newX = 0;
+	    int newY = 0;
+	    int newWidth = img.getWidth();
+	    int newHeight = img.getHeight();
+
+	    if (offX < 0) newX -= offX;
+	    if (offY < 0) newY -= offY;
+	    if (newWidth + offX >= pW) newWidth -= (newWidth + offX) - pW;
+	    if (newHeight + offY >= pH) newHeight -= (newHeight + offY) - pH;
+
+	    for (int y = newY; y < newHeight; y++) {
+	        for (int x = newX; x < newWidth; x++) {
+	        	int sourceX = flipX ? (img.getWidth() - 1 - x) : x;
+	            
+	            int colorValue = img.getPixels()[sourceX + y * img.getWidth()];
+
+	            setPixel(x + offX, y + offY, colorValue);
+	        }
+	    }
+	}
+
+	public void drawImageTile(ImageTile image, int offX, int offY, int tileX, int tileY, boolean flipX) {
 		offX -= camX;
 		offY -= camY;
 
 		if (image.isAlpha() && !processing) {
-			imageRequest.add(new ImageRequest(image, zDepth, offX, offY));
+			imageRequest.add(new ImageRequest(image.getTileImage(tileX, tileY), zDepth, offX, offY, flipX));
 			return;
 		}
 
-		// Stops rendering
-		if (offX < -image.getWidth())
-			return;
-		if (offY < -image.getHeight())
-			return;
-		if (offX >= pW)
-			return;
-		if (offY >= pH)
-			return;
-
-		// Declare vars
-		int newX = 0;
-		int newY = 0;
-		int newWidth = image.getWidth();
-		int newHeight = image.getHeight();
-
-		// Clips image
-		if (offX < 0)
-			newX -= offX;
-		if (offY < 0)
-			newY -= offY;
-		if (newWidth + offX >= pW)
-			newWidth -= newWidth + offX - pW;
-		if (newHeight + offY >= pH)
-			newHeight -= newHeight + offY - pH;
-
-		for (int y = newY; y < newHeight; y++) {
-			for (int x = newX; x < newWidth; x++) {
-				setPixel(x + offX, y + offY, image.getPixels()[x + y * image.getWidth()]);
-				setLightBlock(x + offX, y + offY, image.getLightBlock());
-			}
-		}
-	}
-
-	public void drawImageTile(ImageTile image, int offX, int offY, int tileX, int tileY) {
-		offX -= camX;
-		offY -= camY;
-
-		if (image.isAlpha() && !processing) {
-			imageRequest.add(new ImageRequest(image.getTileImage(tileX, tileY), zDepth, offX, offY));
-			return;
-		}
-
-		// Stops rendering
 		if (offX < -image.getTileW())
 			return;
 		if (offY < -image.getTileH())
@@ -224,13 +213,11 @@ public class Renderer {
 		if (offY >= pH)
 			return;
 
-		// Declare vars
 		int newX = 0;
 		int newY = 0;
 		int newWidth = image.getTileW();
 		int newHeight = image.getTileH();
 
-		// Clips image
 		if (offX < 0)
 			newX -= offX;
 		if (offY < 0)
@@ -249,6 +236,80 @@ public class Renderer {
 		}
 	}
 
+	public void drawImagePart(Image image, int offX, int offY, int width, int height, int srcX, int srcY) {
+	    // 1. Clipping (Zuschneiden)
+	    // Wir bestimmen, wo wir auf dem Bildschirm anfangen zu malen (Start)
+	    // und wie viel wir malen (Breite/Höhe).
+	    
+	    // Wenn das Bild komplett außerhalb ist, sofort abbrechen
+	    if (offX >= pW || offY >= pH || offX + width <= 0 || offY + height <= 0) {
+	        return;
+	    }
+
+	    int startX = 0; // Offset im Quellbild (von links)
+	    int startY = 0; // Offset im Quellbild (von oben)
+	    
+	    // Links beschneiden (wenn offX negativ ist, fangen wir bei 0 an)
+	    if (offX < 0) {
+	        startX = -offX;     // Wir fangen im Quellbild weiter rechts an
+	        width -= startX;    // Wir malen weniger breit
+	        offX = 0;           // Auf dem Screen fangen wir bei 0 an
+	    }
+	    
+	    if (offY < 0) {
+	        startY = -offY;
+	        height -= startY;
+	        offY = 0;
+	    }
+
+	    if (offX + width > pW) {
+	        width = pW - offX;
+	    }
+	    
+	    if (offY + height > pH) {
+	        height = pH - offY;
+	    }
+
+	    if (width <= 0 || height <= 0) return;
+
+	    // --- 2. Pointer / Index Berechnung ---
+	    int imgW = image.getWidth();
+	    int[] srcPixels = image.getPixels(); // Das Bild
+	    int[] destPixels = p;           // Der Bildschirm
+
+	    // Start-Indizes berechnen
+	    // QUELLE: Wir starten bei (srcX + startX) und (srcY + startY)
+	    int srcIndex = (srcY + startY) * imgW + (srcX + startX);
+	    
+	    // ZIEL: Wir starten bei offY und offX auf dem Screen
+	    int destIndex = offY * pW + offX; 
+
+	    // Schrittweiten (Stride): Wie viele Pixel müssen wir am Zeilenende überspringen?
+	    int srcStep = imgW - width;
+	    int destStep = pW - width;
+
+	    for (int y = 0; y < height; y++) {
+	        for (int x = 0; x < width; x++) {
+	            
+	            // Pixel lesen
+	            int color = srcPixels[srcIndex];
+
+	            // Transparenz-Check (Alpha > 0)
+	            if ((color & 0xFF000000) != 0) {
+	                destPixels[destIndex] = color;
+	            }
+
+	            // Zeiger weiterschieben
+	            srcIndex++;
+	            destIndex++;
+	        }
+	        
+	        // Am Zeilenende: Pointer auf den Anfang der nächsten Zeile setzen
+	        srcIndex += srcStep;
+	        destIndex += destStep;
+	    }
+	}
+	
 	public void drawRect(int offX, int offY, int width, int height, int color) {
 		offX -= camX;
 		offY -= camY;
@@ -322,7 +383,7 @@ public class Renderer {
 				return;
 
 			if (lightBlock[screenX + screenY * pW] == Light.FULL)
-				return; // blocks light
+				return;
 
 			setLightMap(screenX, screenY, lightColor);
 
