@@ -237,23 +237,18 @@ public class Renderer {
 	}
 
 	public void drawImagePart(Image image, int offX, int offY, int width, int height, int srcX, int srcY) {
-	    // 1. Clipping (Zuschneiden)
-	    // Wir bestimmen, wo wir auf dem Bildschirm anfangen zu malen (Start)
-	    // und wie viel wir malen (Breite/Höhe).
-	    
-	    // Wenn das Bild komplett außerhalb ist, sofort abbrechen
+
 	    if (offX >= pW || offY >= pH || offX + width <= 0 || offY + height <= 0) {
 	        return;
 	    }
 
-	    int startX = 0; // Offset im Quellbild (von links)
-	    int startY = 0; // Offset im Quellbild (von oben)
-	    
-	    // Links beschneiden (wenn offX negativ ist, fangen wir bei 0 an)
+	    int startX = 0;
+	    int startY = 0;
+
 	    if (offX < 0) {
-	        startX = -offX;     // Wir fangen im Quellbild weiter rechts an
-	        width -= startX;    // Wir malen weniger breit
-	        offX = 0;           // Auf dem Screen fangen wir bei 0 an
+	        startX = -offX;
+	        width -= startX;
+	        offX = 0;
 	    }
 	    
 	    if (offY < 0) {
@@ -272,39 +267,30 @@ public class Renderer {
 
 	    if (width <= 0 || height <= 0) return;
 
-	    // --- 2. Pointer / Index Berechnung ---
 	    int imgW = image.getWidth();
-	    int[] srcPixels = image.getPixels(); // Das Bild
-	    int[] destPixels = p;           // Der Bildschirm
+	    int[] srcPixels = image.getPixels();
+	    int[] destPixels = p;
 
-	    // Start-Indizes berechnen
-	    // QUELLE: Wir starten bei (srcX + startX) und (srcY + startY)
 	    int srcIndex = (srcY + startY) * imgW + (srcX + startX);
 	    
-	    // ZIEL: Wir starten bei offY und offX auf dem Screen
 	    int destIndex = offY * pW + offX; 
 
-	    // Schrittweiten (Stride): Wie viele Pixel müssen wir am Zeilenende überspringen?
 	    int srcStep = imgW - width;
 	    int destStep = pW - width;
 
 	    for (int y = 0; y < height; y++) {
 	        for (int x = 0; x < width; x++) {
 	            
-	            // Pixel lesen
 	            int color = srcPixels[srcIndex];
 
-	            // Transparenz-Check (Alpha > 0)
 	            if ((color & 0xFF000000) != 0) {
 	                destPixels[destIndex] = color;
 	            }
 
-	            // Zeiger weiterschieben
 	            srcIndex++;
 	            destIndex++;
 	        }
 	        
-	        // Am Zeilenende: Pointer auf den Anfang der nächsten Zeile setzen
 	        srcIndex += srcStep;
 	        destIndex += destStep;
 	    }
