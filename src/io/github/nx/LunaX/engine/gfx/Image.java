@@ -5,8 +5,9 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 
 public class Image {
-	private int w, h;
-	private int[] p; // pixel data
+	protected int w;
+	protected int h;
+	protected int[] p; // pixel data
 	private boolean alpha = true;
 	private int lightBlock = Light.NONE;
 

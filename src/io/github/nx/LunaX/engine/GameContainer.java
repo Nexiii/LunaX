@@ -7,7 +7,8 @@ public class GameContainer implements Runnable {
 	private Renderer renderer;
 	private Input input;
 	private AbstractGame game;
-
+	private Logger logger;
+	
 	private boolean running = false;
 	private final double UPDATE_CAP = 1.0 / 60.0;
 
@@ -19,7 +20,8 @@ public class GameContainer implements Runnable {
 	private float scale = defaultScl;
 	private String title = "LunaX | v.0.8.3A";
 	private String IcoImagePath;
-
+	private boolean useConsole = false;
+	
 	public GameContainer(AbstractGame game) {
 		this.game = game;
 	}
@@ -28,7 +30,8 @@ public class GameContainer implements Runnable {
 		window = new Window(this);
 		renderer = new Renderer(this);
 		input = new Input(this);
-
+		logger = new Logger(this);
+		
 		thread = new Thread(this);
 		thread.run();
 	}
@@ -36,7 +39,7 @@ public class GameContainer implements Runnable {
 	public void stop() {
 
 	}
-
+	
 	public void run() {
 		running = true;
 
@@ -80,8 +83,6 @@ public class GameContainer implements Runnable {
 				renderer.clear();
 				game.render(this, renderer);
 				renderer.process();
-				renderer.setCamX(0);
-				renderer.setCamY(0);
 				window.update();
 				frames++;
 			} else {
@@ -96,9 +97,17 @@ public class GameContainer implements Runnable {
 	}
 
 	private void dispose() {
-
+		
 	}
-
+	
+	public boolean setUseConsole(boolean useConsole) {
+    	return this.useConsole  = useConsole;
+    }
+    
+	public boolean getUseConsole() {
+    	return useConsole;
+    }
+	
 	public int getWidth() {
 		return width;
 	}
@@ -153,5 +162,9 @@ public class GameContainer implements Runnable {
 
 	public int getFps() {
 		return fps;
+	}
+
+	public Logger getLogger() {
+		return logger;
 	}
 }

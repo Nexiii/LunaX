@@ -2,6 +2,7 @@ package io.github.nx.LunaX.engine;
 
 import java.awt.image.DataBufferInt;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 
@@ -15,6 +16,8 @@ import io.github.nx.LunaX.engine.gfx.LightRequest;
 
 public class Renderer {
 
+	private GameContainer gc;
+	
 	private ArrayList<ImageRequest> imageRequest = new ArrayList<ImageRequest>();
 	private ArrayList<LightRequest> lightRequest = new ArrayList<LightRequest>();
 
@@ -24,13 +27,17 @@ public class Renderer {
 	private int[] lightMap;
 	private int[] lightBlock;
 
+	private int clearColor = Color.RGB(0, 0, 0);
+	
 	private int ambientColor = Color.RGB(255, 255, 255);
 	private int zDepth = 0;
 	private boolean processing = false;
 
-	private int camX, camY;
+	private int offX = 0;
+    private int offY = 0;
 
 	public Renderer(GameContainer gc) {
+		this.gc = gc;
 		pW = gc.getWidth();
 		pH = gc.getHeight();
 		p = ((DataBufferInt) gc.getWindow().getImage().getRaster().getDataBuffer()).getData();
@@ -40,18 +47,19 @@ public class Renderer {
 	}
 
 	public void clear() {
-		for (int i = 0; i < p.length; i++) {
-			p[i] = 0;
-			zBuffer[i] = 0;
-			lightMap[i] = ambientColor;
-			lightBlock[i] = 0;
-		}
+	    Arrays.fill(p, clearColor); 
+
+	    for (int i = 0; i < p.length; i++) {
+	        
+	        zBuffer[i] = 0;
+	        lightMap[i] = ambientColor;
+	        lightBlock[i] = 0;
+	    }
 	}
 
 	public void process() {
 	    processing = true;
 
-	    // sorting
 	    Collections.sort(imageRequest, new Comparator<ImageRequest>() {
 	        @Override
 	        public int compare(ImageRequest i0, ImageRequest i1) {
@@ -68,7 +76,6 @@ public class Renderer {
 	        drawImage(ir.image, ir.offX, ir.offY, ir.flipX); 
 	    }
 
-	    // draw lighting
 	    for (int i = 0; i < lightRequest.size(); i++) {
 	        LightRequest lr = lightRequest.get(i);
 	        drawLightRequest(lr.light, lr.locX, lr.locY);
@@ -140,33 +147,72 @@ public class Renderer {
 		lightBlock[x + y * pW] = value;
 	}
 
-	public void drawString(String text, int offX, int offY, int color, Font font) {
-		int offset = 0;
-		Image fontImage = font.getFontImage();
-		
-		int[] fontPixels = fontImage.getPixels();
-		int fontW = fontImage.getWidth();
+	public void drawString(String text, int offX, int offY, int color, Font font, float scale) {
+	    Image fontImage = font.getFontImage();
+	    int[] fontPixels = fontImage.getPixels();
+	    int fontW = fontImage.getWidth();
+	    int fontH = fontImage.getHeight();
+	    
+	    int canvasWidth = gc.getWidth(); 
 
-		for (int i = 0; i < text.length(); i++) {
-			int unicode = text.codePointAt(i);
-			
-			if(unicode < 0 || unicode >= font.getWidths().length) continue;
+	    int textR = (color >> 16) & 0xff;
+	    int textG = (color >> 8) & 0xff;
+	    int textB = color & 0xff;
 
-			int charWidth = font.getWidths()[unicode];
-			int charOffset = font.getOffsets()[unicode];
+	    int offset = 0;
 
-			for (int y = 0; y < fontImage.getHeight(); y++) {
-				for (int x = 0; x < charWidth; x++) {
-					
-					int fontPixel = fontPixels[(x + charOffset) + y * fontW];
-					
-					if ((fontPixel & 0xff000000) != 0) {
-						setPixel(x + offX + offset, y + offY, color);
-					}
-				}
-			}
-			offset += charWidth;
-		}
+	    for (int i = 0; i < text.length(); i++) {
+	        int unicode = text.codePointAt(i);
+	        if (unicode < 0 || unicode >= font.getWidths().length) continue;
+
+	        int charWidth = font.getWidths()[unicode];
+	        int charOffset = font.getOffsets()[unicode];
+
+	        int destHeight = (int) (fontH * scale);
+	        int destWidth = (int) (charWidth * scale);
+
+	        for (int y = 0; y < destHeight; y++) {
+	            for (int x = 0; x < destWidth; x++) {
+	                int srcX = (int) (x / scale);
+	                int srcY = (int) (y / scale);
+	                
+	                if (srcX >= charWidth || srcY >= fontH) continue;
+
+	                int fontPixel = fontPixels[(srcX + charOffset) + srcY * fontW];
+	                int alpha = (fontPixel >> 24) & 0xff;
+
+	                if (alpha == 0) continue;
+
+	                int screenX = x + offX + offset;
+	                int screenY = y + offY;
+
+	                if (screenX < 0 || screenX >= canvasWidth || screenY < 0 || screenY >= gc.getHeight()) continue;
+
+	                if (alpha == 255) {
+	                    setPixel(screenX, screenY, color);
+	                } else {
+	                    int bgIndex = screenX + screenY * canvasWidth;
+	                    int bgColor = p[bgIndex];
+
+	                    int bgR = (bgColor >> 16) & 0xff;
+	                    int bgG = (bgColor >> 8) & 0xff;
+	                    int bgB = bgColor & 0xff;
+
+	                    float a = alpha / 255.0f;
+	                    float invA = 1.0f - a;
+
+	                    int r = (int)(bgR * invA + textR * a);
+	                    int g = (int)(bgG * invA + textG * a);
+	                    int b = (int)(bgB * invA + textB * a);
+
+	                    int finalPixel = (255 << 24) | (r << 16) | (g << 8) | b;
+	                    
+	                    p[bgIndex] = finalPixel; 
+	                }
+	            }
+	        }
+	        offset += destWidth;
+	    }
 	}
 
 	public void drawImage(Image img, int offX, int offY, boolean flipX) {
@@ -196,12 +242,13 @@ public class Renderer {
 	}
 
 	public void drawImageTile(ImageTile image, int offX, int offY, int tileX, int tileY, boolean flipX) {
-		offX -= camX;
-		offY -= camY;
+		offX -= this.offX;
+		offY -= this.offY;
 
 		if (image.isAlpha() && !processing) {
-			imageRequest.add(new ImageRequest(image.getTileImage(tileX, tileY), zDepth, offX, offY, flipX));
-			return;
+		    int id = 0;
+			imageRequest.add(new ImageRequest(image.getTileImage(id), zDepth, offX, offY, flipX));
+		    return;
 		}
 
 		if (offX < -image.getTileW())
@@ -297,8 +344,8 @@ public class Renderer {
 	}
 	
 	public void drawRect(int offX, int offY, int width, int height, int color) {
-		offX -= camX;
-		offY -= camY;
+		offX -= this.offX;
+		offY -= this.offY;
 
 		for (int y = 0; y <= height; y++) {
 			setPixel(offX, y + offY, color);
@@ -311,8 +358,8 @@ public class Renderer {
 	}
 
 	public void drawRectFill(int offX, int offY, int width, int height, int color) {
-		offX -= camX;
-		offY -= camY;
+		offX -= this.offX;
+		offY -= this.offY;
 
 		// Stops rendering
 		if (offX < -width)
@@ -336,8 +383,8 @@ public class Renderer {
 	}
 
 	private void drawLightRequest(Light light, int offX, int offY) {
-		offX -= camX;
-		offY -= camY;
+		offX -= this.offX;
+		offY -= this.offY;
 
 		for (int i = 0; i <= light.getDiameter(); i++) {
 			drawLightLine(light, light.getRadius(), light.getRadius(), i, 0, offX, offY); // top
@@ -389,9 +436,10 @@ public class Renderer {
 		}
 	}
 
-	public int getzDepth() {
-		return zDepth;
-	}
+	public int getOffX() { return offX; }
+    public int getOffY() { return offY; }
+	
+	public int getzDepth() { return zDepth; }
 
 	public void setzDepth(int zDepth) {
 		this.zDepth = zDepth;
@@ -404,20 +452,8 @@ public class Renderer {
 	public void setAmbientColor(int ambientColor) {
 		this.ambientColor = ambientColor;
 	}
-
-	public int getCamX() {
-		return camX;
-	}
-
-	public void setCamX(int camX) {
-		this.camX = camX;
-	}
-
-	public int getCamY() {
-		return camY;
-	}
-
-	public void setCamY(int camY) {
-		this.camY = camY;
+	
+	public void setBackgroundColor(int color) {
+	    this.clearColor = color;
 	}
 }
