@@ -1,8 +1,8 @@
 package io.github.nx.LunaX.engine.gfx;
 
 public class Font {
-    public static final Font ARIAL = new Font("/fonts/arial.png");
-    public static final Font COMICSANS = new Font("/fonts/comicsans.png");
+    public static final Font ARIAL = new Font("/engine/fonts/arial.png");
+    public static final Font COMICSANS = new Font("/engine/fonts/comicsans.png");
 
     private Image fontImage;
     private int[] offsets;

@@ -357,7 +357,7 @@ public class Renderer {
 		}
 	}
 
-	public void drawRectFill(int offX, int offY, int width, int height, int color) {
+	public void drawFillRect(int offX, int offY, int width, int height, int color) {
 		offX -= this.offX;
 		offY -= this.offY;
 
